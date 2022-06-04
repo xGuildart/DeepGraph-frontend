@@ -24,6 +24,12 @@
   color: white;
 }
 
+.App-logo {
+  height: 300px;
+  overflow: auto;
+  resize: both;
+}
+
 .App-link {
   color: #61dafb;
 }
