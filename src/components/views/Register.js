@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Form from "../../utilities/Forms";
+import { registerUser } from "../../utilities/restapiconsumer";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -42,14 +43,23 @@ const Register = () => {
   const register = (e) => {
     e.preventDefault();
 
+    console.log(name);
+
+    //getToken();
     const validate = validateRegister();
 
     if (validate) {
-      setValidate({});
-      setName("");
-      setEmail("");
-      setPassword("");
-      alert("Successfully Register User");
+      registerUser(name, email, password).then((response) => {
+        if (response.status == 200) {
+          setValidate({});
+          setName("");
+          setEmail("");
+          setPassword("");
+          alert("Successfully Register User");
+        }
+      }, (error) => console.log(error));
+
+
     }
   };
 
@@ -83,8 +93,8 @@ const Register = () => {
                   <input
                     type="text"
                     className={`form-control ${validate.validate && validate.validate.name
-                        ? "is-invalid "
-                        : ""
+                      ? "is-invalid "
+                      : ""
                       }`}
                     id="name"
                     name="name"
@@ -95,8 +105,8 @@ const Register = () => {
 
                   <div
                     className={`invalid-feedback text-start ${validate.validate && validate.validate.name
-                        ? "d-block"
-                        : "d-none"
+                      ? "d-block"
+                      : "d-none"
                       }`}
                   >
                     {validate.validate && validate.validate.name
@@ -109,8 +119,8 @@ const Register = () => {
                   <input
                     type="email"
                     className={`form-control ${validate.validate && validate.validate.email
-                        ? "is-invalid "
-                        : ""
+                      ? "is-invalid "
+                      : ""
                       }`}
                     id="email"
                     name="email"
@@ -121,8 +131,8 @@ const Register = () => {
 
                   <div
                     className={`invalid-feedback text-start ${validate.validate && validate.validate.email
-                        ? "d-block"
-                        : "d-none"
+                      ? "d-block"
+                      : "d-none"
                       }`}
                   >
                     {validate.validate && validate.validate.email
@@ -136,8 +146,8 @@ const Register = () => {
                     <input
                       type={showPassword ? "text" : "password"}
                       className={`form-control ${validate.validate && validate.validate.password
-                          ? "is-invalid "
-                          : ""
+                        ? "is-invalid "
+                        : ""
                         }`}
                       name="password"
                       id="password"
@@ -160,8 +170,8 @@ const Register = () => {
 
                     <div
                       className={`invalid-feedback text-start ${validate.validate && validate.validate.password
-                          ? "d-block"
-                          : "d-none"
+                        ? "d-block"
+                        : "d-none"
                         }`}
                     >
                       {validate.validate && validate.validate.password

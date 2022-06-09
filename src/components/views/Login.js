@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import Form from "../../utilities/Forms";
 import logo from '../../logo.png';
+import { checkUser } from "../../utilities/restapiconsumer";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
+const Login = (props) => {
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [validate, setValidate] = useState({});
@@ -14,10 +15,9 @@ const Login = () => {
     let isValid = true;
 
     let validator = Form.validator({
-      email: {
-        value: email,
+      identifier: {
+        value: identifier,
         isRequired: true,
-        isEmail: true,
       },
       password: {
         value: password,
@@ -36,16 +36,24 @@ const Login = () => {
     return isValid;
   };
 
+
   const authenticate = (e) => {
     e.preventDefault();
 
     const validate = validateLogin();
 
     if (validate) {
-      setValidate({});
-      setEmail("");
-      setPassword("");
-      alert("Successfully Login");
+      checkUser(identifier, password).then((response) => {
+        console.log(response)
+        if ((response.status === 202) && (response.data === true)) {
+          setValidate({});
+          setIdentifier("");
+          setPassword("");
+          props.history.push('/view');
+        }
+      }
+      )
+
     }
   };
 
@@ -83,28 +91,28 @@ const Login = () => {
                 onSubmit={authenticate}
                 autoComplete={"off"}
               >
-                <div className="email mb-3">
+                <div className="identifier mb-3">
                   <input
-                    type="email"
-                    className={`form-control ${validate.validate && validate.validate.email
+                    type="identifier"
+                    className={`form-control ${validate.validate && validate.validate.identifier
                       ? "is-invalid "
                       : ""
                       }`}
-                    id="email"
-                    name="email"
-                    value={email}
-                    placeholder="Email"
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="identifier"
+                    name="indetifier"
+                    value={identifier}
+                    placeholder="Identifier"
+                    onChange={(e) => setIdentifier(e.target.value)}
                   />
 
                   <div
-                    className={`invalid-feedback text-start ${validate.validate && validate.validate.email
+                    className={`invalid-feedback text-start ${validate.validate && validate.validate.identifier
                       ? "d-block"
                       : "d-none"
                       }`}
                   >
-                    {validate.validate && validate.validate.email
-                      ? validate.validate.email[0]
+                    {validate.validate && validate.validate.identifier
+                      ? validate.validate.identifier[0]
                       : ""}
                   </div>
                 </div>
