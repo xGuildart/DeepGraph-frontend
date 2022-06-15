@@ -2,18 +2,25 @@ import { useD3 } from '../../hooks/useD3';
 import React from 'react';
 import * as d3 from 'd3';
 import { nest } from 'd3-collection';
-import { getGenZ } from '../../utilities/restapiconsumer';
+import db from '../../storage/pouchdb';
+import dateFormat from 'dateformat';
 
-function LineChart() {
-    const ref = useD3(
-        (svg) => {
+function LineChart({ data }) {
+    const ref = useD3((svg) => {
+        db.get("genz").then((dd) => {
+            data = dd.data.slice(0, 300);
+            data = data.sort(function (a, b) {
+                return new Date(a.date) - new Date(b.date);
+            });
+
             // set the dimensions and margins of the graph
-            var margin = { top: 10, right: 30, bottom: 30, left: 60 },
+            var margin = { top: 10, right: 10, bottom: 30, left: 60 },
                 width = 460 - margin.left - margin.right,
                 height = 400 - margin.top - margin.bottom;
 
             // append the svg object to the body of the page
-            var svg = d3.select("#my_dataviz")
+            var svg = d3.select(".plot-area")
+                .text("us sss")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
@@ -21,51 +28,51 @@ function LineChart() {
                 .attr("transform",
                     "translate(" + margin.left + "," + margin.top + ")");
 
-            //Read the data
-            d3.csv("https://raw.githubusercontent.com/holtzy/data_to_viz/master/Example_dataset/5_OneCatSevNumOrdered.csv", function (data) {
-                // group the data: I want to draw one line per group
-                var sumstat = nest() // nest function allows to group the calculation per level of a factor
-                    .key(function (d) { return d.name; })
-                    .entries(data);
+            var sumstat = nest() // nest function allows to group the calculation per level of a factor
+                .key(function (d) { return d.category; })
+                .entries(data);
 
-                // Add X axis --> it is a date format
-                var x = d3.scaleLinear()
-                    .domain(d3.extent(data, function (d) { return d.year; }))
-                    .range([0, width]);
-                svg.append("g")
-                    .attr("transform", "translate(0," + height + ")")
-                    .call(d3.axisBottom(x).ticks(5));
+            // Add X axis --> it is a date format
+            var x = d3.scaleTime()
+                .domain(d3.extent(data, function (d) { return d3.timeParse("%Y-%m-%d")(d.date); }))
+                .range([0, width]);
+            svg.append("g")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x).ticks(5));
 
-                // Add Y axis
-                var y = d3.scaleLinear()
-                    .domain([0, d3.max(data, function (d) { return +d.n; })])
-                    .range([height, 0]);
-                svg.append("g")
-                    .call(d3.axisLeft(y));
+            // Add Y axis
+            var y = d3.scaleLinear()
+                .domain([0, d3.max(data, function (d) { return d.sentence_sent_score; })])
+                .range([height, 0]);
+            svg.append("g")
+                .call(d3.axisLeft(y));
 
-                // color palette
-                var res = sumstat.map(function (d) { return d.key }) // list of group names
-                var color = d3.scaleOrdinal()
-                    .domain(res)
-                    .range(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'])
+            // color palette
+            var res = sumstat.map(function (d) { return d.category }) // list of group names
+            var color = d3.scaleOrdinal()
+                .domain(res)
+                .range(['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33', '#a65628', '#f781bf', '#999999'])
 
-                // Draw the line
-                svg.selectAll(".line")
-                    .data(sumstat)
-                    .enter()
-                    .append("path")
-                    .attr("fill", "none")
-                    .attr("stroke", function (d) { return color(d.key) })
-                    .attr("stroke-width", 1.5)
-                    .attr("d", function (d) {
-                        return d3.line()
-                            .x(function (d) { return x(d.year); })
-                            .y(function (d) { return y(+d.n); })
-                            (d.values)
-                    })
-
-            });
+            // Draw the line
+            svg.selectAll(".line")
+                .data(sumstat)
+                .enter()
+                .append("path")
+                .attr("fill", "none")
+                .attr("stroke", function (d) {
+                    // console.log(d);
+                    return color(d.key)
+                })
+                .attr("stroke-width", 1.5)
+                .attr("d", function (d) {
+                    return d3.line()
+                        .x(function (d) { return x(d3.timeParse("%Y-%m-%d")(d.date)); })
+                        .y(function (d) { return y(d.sentence_sent_score); })
+                        (d.values)
+                })
         });
+    });
+
 
     return (
         <svg

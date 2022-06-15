@@ -1,7 +1,21 @@
-import { useState } from 'react';
-import { getGenZ } from '../../utilities/restapiconsumer';
-// import BarChart from '../charts/BarChart';
+import { useState, useEffect, useContext, forwardRef } from 'react';
+import { useLocation } from "react-router-dom";
+import db, { DeletedDocumentsData, StoreDataToDB, ViaChanges } from '../../storage/pouchdb';
+import { checkUser, getGenZ } from '../../utilities/restapiconsumer';
+import BarChart from '../charts/BarChart';
 import LineChart from '../charts/LineChart';
+import AppBar from '../components/AppBar';
+import { Context, withContext } from '../../store/Store';
+import { ConvertGenzDataByCategory } from '../../utilities/helper';
+import BubbleChart from '../charts/BubbleChart';
+import FormControls from '../components/FormControls';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+
+const Alert = forwardRef(function Alert(props, ref) {
+    return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 
 const data = [
     { year: 1980, efficiency: 24.3, sales: 8949000 },
@@ -36,25 +50,74 @@ const data = [
     { year: 2017, efficiency: 39.4, sales: 6081000 },
 ]
 
-const View = () => {
-    const [genZData, setGenZData] = useState([]);
+const View = (props) => {
+    const [state, dispatch] = useContext(Context);
+
+
     // getGenZ().then((response) => {
     //     setGenZData(response.data);
     // }, (err) => console.log(err));
-    const initView = () => {
-        if (genZData.length == 0) {
-            getGenZ().then((response) => {
-                setGenZData(response.data);
-            }, (err) => console.log(err));
+
+    // if (!state.authenticated) {
+    //     console.log('Not Authenticted');
+    //     props.history.push('/');
+    // }
+
+    // console.log(state.spinnerStat);
+    // console.log(state.authenticated);
+    // console.log(state.genzCollection);
+    // var a = ConvertGenzDataByCategory(state.genzCollection);
+
+    //ViaChanges();
+    // useEffect(() => {
+    console.log(state.genzCollection);
+    console.log(state.drawData);
+    //      console.log(state.maxCategory);
+    // });
+
+    // for (const key in props.children) {
+    //     const componentName = props.children[key].type.name;
+    //     console.log("childName: " + componentName);
+    // }
+
+    useEffect(() => {
+        if (!state.authenticated) {
+            props.history.push({
+                pathname: '/',
+            });
+            dispatch({ type: 'setOpenSnack', payload: true });
         }
+    });
+
+    const handleClose = (event, reason) => {
+        dispatch({ type: 'setLoadingData', payload: false });
     };
-    console.log(genZData);
-    initView();
+
+    function View() {
+        if (state.drawData.length != 0) {
+            return <div className="d3Chart">
+                <BubbleChart dims={state.dimensions} data={state.drawData} scale={state.scale} />
+            </div>
+        } else {
+            return <div className="d3Chart"> </div>
+        }
+    }
 
     return (
         //  <BarChart data={data} />
-        <LineChart />
+        <div className="outerLayout">
+            <AppBar props={props} />
+            <FormControls />
+            <View />
+            <Snackbar open={state.loadingData} autoHideDuration={6000} onClose={handleClose}>
+                <Alert onClose={handleClose} severity="info" sx={{ width: '100%' }}>
+                    Please wait, we load data from databse...
+                </Alert>
+            </Snackbar>
+        </div>
     );
 };
 
-export default View;
+export default withContext(View);
+
+

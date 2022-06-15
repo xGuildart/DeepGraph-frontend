@@ -11,13 +11,13 @@ function BarChart({ data }) {
 
             const x = d3
                 .scaleBand()
-                .domain(data.map((d) => d.year))
+                .domain(data.map((d) => new Date(d.date)))
                 .rangeRound([margin.left, width - margin.right])
                 .padding(0.1);
 
             const y1 = d3
                 .scaleLinear()
-                .domain([0, d3.max(data, (d) => d.sales)])
+                .domain([0, d3.max(data, (d) => d.sentence_sent_score)])
                 .rangeRound([height - margin.bottom, margin.top]);
 
             const xAxis = (g) =>

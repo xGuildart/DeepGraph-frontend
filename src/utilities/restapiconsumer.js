@@ -1,9 +1,6 @@
-
 import axios from 'axios';
 // import JSEncrypt from 'jsencrypt';
 // import CryptoJS from 'cryptojs';
-
-
 
 export function getToken() {
 
@@ -31,7 +28,6 @@ export function getToken() {
 
 export function registerUser(username, email, password) {
 
-    //var encryptRsa = new JSEncrypt();
     var baseURL = process.env.REACT_APP_BASE_URL;
 
     return getToken().then((token) => {
@@ -98,3 +94,4 @@ export function getGenZ() {
             });
     }, (error) => { console.log(error) });
 }
+

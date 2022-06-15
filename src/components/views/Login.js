@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { forwardRef, useState, useContext } from "react";
 import { Link, Redirect } from "react-router-dom";
 import Form from "../../utilities/Forms";
 import logo from '../../logo.png';
-import { checkUser } from "../../utilities/restapiconsumer";
+import Snackbar from '@mui/material/Snackbar';
+import { checkUser, getGenZ } from "../../utilities/restapiconsumer";
+import db, { StoreDataToDB, initDB } from '../../storage/pouchdb';
+import { Context, withContext } from '../../store/Store'
+import { ConvertGenzDataByCategory } from "../../utilities/helper";
+import MuiAlert from '@mui/material/Alert';
+
+const Alert = forwardRef(function Alert(props, ref) {
+  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />;
+});
+
 
 const Login = (props) => {
   const [identifier, setIdentifier] = useState("");
@@ -10,6 +20,8 @@ const Login = (props) => {
   const [remember, setRemember] = useState(false);
   const [validate, setValidate] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+
+  const [state, dispatch] = useContext(Context);
 
   const validateLogin = () => {
     let isValid = true;
@@ -36,6 +48,45 @@ const Login = (props) => {
     return isValid;
   };
 
+  const initData = () => {
+    getGenZ().then((response) => {
+      dispatch({ type: 'saveStates', payload: response.data })
+      var a = ConvertGenzDataByCategory(response.data);
+      dispatch({ type: 'setGroupedGenz', payload: a });
+
+      // localStorage.clear();
+
+      StoreDataToDB("genz", response.data).then((d) => {
+        console.log("data stored");
+        console.log(d);
+      }, (err) => console.error(err));
+      // var a = ConvertGenzDataByCategory(response.data);
+      // console.log(a);
+      // console.log("alength: " + a.size);
+      // StoreDataToDB("genz", { data: response.data, catm: a.size }).then((g) => {
+      //   console.log("what saved?");
+      //   console.log(g);
+      //   dispatch({ type: 'setMaxCategory', payload: a.size });
+      // });
+      //window.localStorage.setItem("genz", response.data);
+    }, (err) => console.log(err));
+  };
+
+  const setAuth = (value) => {
+    dispatch({ type: 'setAuth', payload: value });
+  };
+
+  const initSpinner = () => {
+    dispatch({ type: 'toogleSpinnerStat' })
+  };
+
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+
+    dispatch({ type: 'setOpenSnack', payload: false });
+  };
 
   const authenticate = (e) => {
     e.preventDefault();
@@ -46,10 +97,19 @@ const Login = (props) => {
       checkUser(identifier, password).then((response) => {
         console.log(response)
         if ((response.status === 202) && (response.data === true)) {
+          //initDB();
+          setAuth(true);
+          initSpinner();
           setValidate({});
           setIdentifier("");
           setPassword("");
-          props.history.push('/view');
+          initData();
+          props.history.push({
+            pathname: '/view',
+          });
+        }
+        else {
+          setAuth(false);
         }
       }
       )
@@ -195,6 +255,11 @@ const Login = (props) => {
                   Sign up{" "}
                 </Link>
               </div>
+              <Snackbar open={state.openSnack} autoHideDuration={6000} onClose={handleClose}>
+                <Alert onClose={handleClose} severity="info" sx={{ width: '100%' }}>
+                  You've been logged out, login again!
+                </Alert>
+              </Snackbar>
             </div>
           </div>
         </div>
@@ -203,4 +268,4 @@ const Login = (props) => {
   );
 };
 
-export default Login;
+export default withContext(Login);

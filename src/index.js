@@ -3,11 +3,14 @@ import ReactDOM from "react-dom";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import "./assets/scss/auth.scss";
+import { Store } from './store/Store'
 
 ReactDOM.render(
-  <React.StrictMode>
+  // <React.StrictMode>
+  <Store>
     <App />
-  </React.StrictMode>,
+  </Store>,
+  // </React.StrictMode>,
   document.getElementById("root")
 );
 
