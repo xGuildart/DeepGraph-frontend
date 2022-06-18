@@ -1,10 +1,10 @@
 import { forwardRef, useState, useContext } from "react";
-import { Link, Redirect } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Form from "../../utilities/Forms";
 import logo from '../../logo.png';
 import Snackbar from '@mui/material/Snackbar';
-import { checkUser, getGenZ } from "../../utilities/restapiconsumer";
-import db, { StoreDataToDB, initDB } from '../../storage/pouchdb';
+import { checkUser, getGenZ, getYoungPeople, updateUser } from "../../utilities/restapiconsumer";
+import { StoreDataToDB } from '../../storage/pouchdb';
 import { Context, withContext } from '../../store/Store'
 import { ConvertGenzDataByCategory } from "../../utilities/helper";
 import MuiAlert from '@mui/material/Alert';
@@ -49,27 +49,21 @@ const Login = (props) => {
   };
 
   const initData = () => {
+    //get genz dataset
     getGenZ().then((response) => {
       dispatch({ type: 'saveStates', payload: response.data })
       var a = ConvertGenzDataByCategory(response.data);
       dispatch({ type: 'setGroupedGenz', payload: a });
 
-      // localStorage.clear();
-
       StoreDataToDB("genz", response.data).then((d) => {
-        console.log("data stored");
-        console.log(d);
       }, (err) => console.error(err));
-      // var a = ConvertGenzDataByCategory(response.data);
-      // console.log(a);
-      // console.log("alength: " + a.size);
-      // StoreDataToDB("genz", { data: response.data, catm: a.size }).then((g) => {
-      //   console.log("what saved?");
-      //   console.log(g);
-      //   dispatch({ type: 'setMaxCategory', payload: a.size });
-      // });
-      //window.localStorage.setItem("genz", response.data);
     }, (err) => console.log(err));
+
+    //get young dataset
+    getYoungPeople().then((response) => {
+      dispatch({ type: 'saveYoung', payload: response.data });
+    }, (err) => { console.error(err) });
+
   };
 
   const setAuth = (value) => {
@@ -86,6 +80,7 @@ const Login = (props) => {
     }
 
     dispatch({ type: 'setOpenSnack', payload: false });
+    dispatch({ type: 'setLimitConnection', paload: false });
   };
 
   const authenticate = (e) => {
@@ -95,9 +90,17 @@ const Login = (props) => {
 
     if (validate) {
       checkUser(identifier, password).then((response) => {
-        console.log(response)
         if ((response.status === 202) && (response.data === true)) {
-          //initDB();
+          updateUser(identifier).then((resp) => {
+            if (resp.identifier === identifier) {
+              if (resp.con > state.LIMIT_CONNECTION) {
+                props.history.push({
+                  pathname: '/',
+                });
+                dispatch({ type: 'setLimitConnection', payload: true });
+              }
+            }
+          });
           setAuth(true);
           initSpinner();
           setValidate({});
@@ -258,6 +261,12 @@ const Login = (props) => {
               <Snackbar open={state.openSnack} autoHideDuration={6000} onClose={handleClose}>
                 <Alert onClose={handleClose} severity="info" sx={{ width: '100%' }}>
                   You've been logged out, login again!
+                </Alert>
+              </Snackbar>
+              <Snackbar open={state.limitConnection} autoHideDuration={6000} onClose={handleClose}>
+                <Alert onClose={handleClose} severity="info" sx={{ width: '100%' }}>
+                  You can't connect anymore, you exceeded your quota, we are sorry!
+                  If it's necessary, Please contact me with email: mustapha.aouimar@gmail.com
                 </Alert>
               </Snackbar>
             </div>

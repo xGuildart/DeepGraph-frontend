@@ -1,62 +1,78 @@
-
-import { useState, useEffect, useContext } from 'react';
+import { useState, useContext } from 'react';
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
-import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
-import { Context, withContext } from '../../store/Store';
+import { Context } from '../../store/Store';
 import { update_data, update_x, update_y } from '../charts/BubbleChart';
 import Button from '@mui/material/Button';
 import { GetDataToDrawByNCategory, GetNCategoryBySliceSize } from '../../utilities/helper';
-import { SettingsInputAntennaTwoTone } from '@material-ui/icons';
 
 const FormControls = () => {
     const [state, dispatch] = useContext(Context);
     const [selectValue2, setSelectValue2] = useState('Mean');
     const [selectValue, setSelectValue] = useState('Mean');
-    const [limit, setLimit] = useState(7000);
-    const [skip, setSkip] = useState(0);
+    const [limit_, setLimit_] = useState(7000);
+    const [skip_, setSkip_] = useState(0);
     const [option, setOption] = useState("By Interval");
     const [check, setCheck] = useState(false);
     const [nCategory, setNCategory] = useState(state.nCategory);
     const [scale, setScale] = useState(state.scale);
+    const [errorText, setErrorText] = useState("");
 
     var handleOverTimeFunc = (e) => { update_x(e.target.value); setSelectValue2(e.target.value); };
     var handleOverFunc = (e) => { update_y(e.target.value); setSelectValue(e.target.value); };
     var handleSkipChange = (e) => {
-        var skip = e.target.value;
-        if (!check) {
-            update_data(state.genzCollection.slice(skip, state.limit), state.dimensions, state.scale);
-            setNCategory(GetNCategoryBySliceSize(state.genzCollection, skip, state.limit));
-        }
+        var skip = parseInt(e.target.value);
+        if (skip <= limit_) {
+            if (!check) {
+                update_data(state.genzCollection.slice(skip, limit_), state.dimensions, state.scale, { time: selectValue2, score: selectValue });
+                setNCategory(GetNCategoryBySliceSize(state.genzCollection, skip, limit_));
+            }
 
-        setSkip(skip);
-        dispatch({
-            type: 'setScope', payload: { skip: skip, limit: state.limit }
-        });
+            setSkip_(skip);
+            dispatch({
+                type: 'setScope', payload: { skip: skip, limit: limit_ }
+            });
+            dispatch({
+                type: 'setFuncs', payload: { time: selectValue2, score: selectValue }
+            });
+            setErrorText("");
+        }
+        else {
+            setErrorText("Incorrect Entry");
+        }
 
     }
     var handleLimitChange = (e) => {
-        var limit = e.target.value;
-        if (!check) {
-            update_data(state.genzCollection.slice(state.skip, limit), state.dimensions, state.scale);
-            setNCategory(GetNCategoryBySliceSize(state.genzCollection, state.skip, limit));
-        }
+        var limit = parseInt(e.target.value);
+        if (skip_ <= limit) {
+            if (!check) {
+                update_data(state.genzCollection.slice(skip_, limit), state.dimensions, state.scale, { time: selectValue2, score: selectValue });
+                setNCategory(GetNCategoryBySliceSize(state.genzCollection, skip_, limit));
+            }
 
-        setLimit(limit);
-        dispatch({
-            type: 'setScope', payload: { skip: state.skip, limit: limit }
-        });
+            setLimit_(limit);
+            dispatch({
+                type: 'setScope', payload: { skip: skip_, limit: limit }
+            });
+            dispatch({
+                type: 'setFuncs', payload: { time: selectValue2, score: selectValue }
+            });
+            setErrorText("");
+        } else {
+            setErrorText("Incorrect Entry");
+        }
     }
     var toogleOption = () => {
-        setOption(option == "By Interval" ? "By Category" : "By Interval");
+        setOption(option === "By Interval" ? "By Category" : "By Interval");
         setNCategory(state.nCategory);
     }
+
     var handleOption = (e) => {
         var checked = e.target.checked;
 
@@ -66,6 +82,10 @@ const FormControls = () => {
             dispatch({ type: 'setByCategory', payload: false });
         }
 
+        dispatch({
+            type: 'setFuncs', payload: { time: selectValue2, score: selectValue }
+        });
+
         setCheck(checked);
         toogleOption();
 
@@ -73,10 +93,12 @@ const FormControls = () => {
     var handleCategoryChange = (e) => {
         var nCat = e.target.value;
         if (check) {
-            console.log(state.genzCollection);
             var dd = GetDataToDrawByNCategory(state.genzCollection, nCat);
-            update_data(dd, state.dimensions, state.scale);
+            update_data(dd, state.dimensions, state.scale, { time: selectValue2, score: selectValue });
             dispatch({ type: 'set_N_Category', payload: nCat });
+            dispatch({
+                type: 'setFuncs', payload: { time: selectValue2, score: selectValue }
+            })
         }
         setNCategory(nCat);
     }
@@ -88,7 +110,7 @@ const FormControls = () => {
     }
 
     var handleRedraw = (e) => {
-        update_data(state.drawData, state.dimensions, state.scale);
+        update_data(state.drawData, state.dimensions, state.scale, { time: selectValue2, score: selectValue });
         setOption(option);
     }
 
@@ -132,8 +154,9 @@ const FormControls = () => {
                     InputLabelProps={{
                         shrink: true,
                     }}
-                    value={skip}
+                    value={skip_}
                     onChange={handleSkipChange}
+                    helperText={errorText}
                     variant="outlined"
                 />
                 <TextField
@@ -143,8 +166,9 @@ const FormControls = () => {
                     InputLabelProps={{
                         shrink: true,
                     }}
-                    value={limit}
+                    value={limit_}
                     onChange={handleLimitChange}
+                    helperText={errorText}
                     variant="outlined"
                 />
                 <FormControlLabel
@@ -162,6 +186,10 @@ const FormControls = () => {
                     onChange={handleCategoryChange}
                     variant="outlined"
                 />
+            </div>
+            {/* <Divider variant="middle" /> */}
+            <Box sx={{ my: 3 }}>
+                <Button onClick={handleRedraw}>Re-draw</Button>
                 <TextField
                     id="zoom"
                     label="Shrink"
@@ -173,8 +201,7 @@ const FormControls = () => {
                     onChange={handleScaleChange}
                     variant="outlined"
                 />
-            </div>
-            <Button onClick={handleRedraw}>Re-draw</Button>
+            </Box>
         </div>
     )
 }

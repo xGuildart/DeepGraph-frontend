@@ -52,11 +52,7 @@ export function GetNCategoryBySliceSize(data, skip, limit) {
 }
 
 export function GetDataToDrawByNCategory(data, nCat) {
-    console.log(data);
     var dd = data.slice(0, data.length);
-    console.log("getDtatodraw call");
-    console.log(data.length);
-    console.log(nCat);
     var sumstat = nest()
         .key(function (d) { return d.category; })
         .entries(dd);
@@ -68,6 +64,5 @@ export function GetDataToDrawByNCategory(data, nCat) {
             counter++;
         }
     });
-    console.log(dr);
     return dr;
 }

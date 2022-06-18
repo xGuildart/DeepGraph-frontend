@@ -5,6 +5,37 @@ import { nest } from 'd3-collection';
 import db from '../../storage/pouchdb';
 import dateFormat from 'dateformat';
 
+var margin, width, height, sumstat, counts, keys, scores, scores_func, func_name;
+var dates_func, d_func_name, color, x, y, z, svg, dot, Tooltip;
+
+var xAxis, xAxis_Width = 100;
+
+function init_vars(data, dims, scale) {
+    // set the dimensions and margins of the graph
+    margin = { top: 40, right: 20, bottom: 30, left: 30 };
+    width = dims.width * scale / 100;
+    height = dims.height * 25 / 100;
+
+    // // color palette
+    // color = d3.scaleOrdinal()
+    //     .domain(keys)
+    //     .range(d3.schemePaired);
+
+
+    // Add X axis --> it is a date format
+    x = d3.scaleTime()
+        .domain(d3.extent(data, function (d) { return d3.timeParse("%Y-%m-%d")(d.date); }))
+        .range([0, width])
+        ;
+
+    // Add Y axis
+    y = d3.scaleLinear()
+        .domain([d3.min(data, function (d) { return d.logits; }), d3.max(data, function (d) { return d.logits; })])
+        .range([height, 0]);
+}
+
+
+
 function LineChart({ data }) {
     const ref = useD3((svg) => {
         db.get("genz").then((dd) => {

@@ -19,11 +19,30 @@ export function getToken() {
         headers: { "Content-Type": "multipart/form-data" },
     })
         .then((response) => {
-            console.log("token: " + response);
+            // console.log("token: " + response);
             return response.data;
         }, (error) => {
             console.log(error);
         });
+}
+
+export function updateUser(username) {
+    var baseURL = process.env.REACT_APP_BASE_URL;
+    return getToken().then((token) => {
+        return axios({
+            method: "patch",
+            url: baseURL + '/users/' + username,
+            headers: {
+                'Authorization': `Bearer ${token.access_token}`
+            },
+        })
+            .then((response) => {
+                // console.log("token: " + response);
+                return response.data;
+            }, (error) => {
+                console.log(error);
+            });
+    }, (error) => { console.log(error); return error; });
 }
 
 export function registerUser(username, email, password) {
@@ -39,7 +58,7 @@ export function registerUser(username, email, password) {
                 },
             })
                 .then((response) => {
-                    console.log(response);
+                    // console.log(response);
                     return response
                 }, (error) => {
                     console.log(error);
@@ -64,7 +83,7 @@ export function checkUser(identifier, password) {
             },
         })
             .then((response) => {
-                console.log(response);
+                // console.log(response);
                 return response
             }, (error) => {
                 console.log(error);
@@ -86,7 +105,29 @@ export function getGenZ() {
             },
         })
             .then((response) => {
-                console.log(response);
+                // console.log(response);
+                return response
+            }, (error) => {
+                console.log(error);
+                return error;
+            });
+    }, (error) => { console.log(error) });
+}
+
+export function getYoungPeople() {
+    var baseURL = process.env.REACT_APP_BASE_URL;
+
+    return getToken().then((token) => {
+        return axios({
+            method: "get",
+            url: baseURL + '/young',
+            params: { offset: 0, limit: 150 },
+            headers: {
+                'Authorization': `Bearer ${token.access_token}`
+            },
+        })
+            .then((response) => {
+                //console.log(response);
                 return response
             }, (error) => {
                 console.log(error);

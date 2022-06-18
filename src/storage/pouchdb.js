@@ -1,5 +1,3 @@
-import { ButtonUnstyled } from "@mui/material/node_modules/@mui/base";
-import { read } from "@popperjs/core";
 import PouchDB from "pouchdb";
 import { getGenZ } from "../utilities/restapiconsumer";
 
@@ -93,20 +91,13 @@ export async function GetAxisWidth() {
 }
 
 export async function ForceDataReload() {
-    console.log("begin force data reload");
     return db.get("genz").then((d) => {
-        console.log("getting data from local storage if any: ");
-        console.log(d);
         if (d.data.length == 0) {
-            console.log("local storage is empty");
-            console.log("attempting getting from distant DB");
             return getGenZ().then((res) => {
-                console.log("data returned is: " + res.data.length);
                 StoreDataToDB("genz", res.data);
                 if (res.data.length > 0) {
                     return res.data;
                 } else {
-                    console.log("re-trying: reload from local");
                     return ReloadFromLocal(res.data);
                 }
 
@@ -133,46 +124,45 @@ export async function ReloadFromLocal(data) {
 }
 
 // 1. get the changes of the documents by their ids.
-export async function ViaChanges() {
-    return db.changes({
-        live: true,
-        since: 0,
-        include_docs: true
-        //style: 'all_docs'
-    }).on('change'), function (change) {
-        if (change.deleted) {
-            console.log("the doc with id: " + change.id + ' and doc: ');
-            console.log(change.doc);
-            console.log("was deleted");
-        } else {
-            console.log("the doc with id: " + change.id);
-            console.log(change.doc);
-            console.log("was modified or added");
-        }
-    }
-}
+// export async function ViaChanges() {
+//     return db.changes({
+//         live: true,
+//         since: 0,
+//         include_docs: true
+//         //style: 'all_docs'
+//     }).on('change'), function (change) {
+//         if (change.deleted) {
+//             console.log("the doc with id: " + change.id + ' and doc: ');
+//             console.log(change.doc);
+//             console.log("was deleted");
+//         } else {
+//             console.log("the doc with id: " + change.id);
+//             console.log(change.doc);
+//             console.log("was modified or added");
+//         }
+//     }
+// }
 
 // 2. then call pouch.get() to retrieve the document data for each document by its latest revision
-export async function DeletedDocumentsData() {
-    return ViaChanges().then((results) => {
-        console.log(results);
-        return results.map(async (result) => {
-            const firstDoc = await db.get(
-                result.id,
-                {
-                    rev: result.changes[0].rev,
-                    deleted: 'ok',
-                    style: 'all_docs'
-                }
-            );
-            return firstDoc;
-        });
-    });
-}
+// export async function DeletedDocumentsData() {
+//     return ViaChanges().then((results) => {
+//         console.log(results);
+//         return results.map(async (result) => {
+//             const firstDoc = await db.get(
+//                 result.id,
+//                 {
+//                     rev: result.changes[0].rev,
+//                     deleted: 'ok',
+//                     style: 'all_docs'
+//                 }
+//             );
+//             return firstDoc;
+//         });
+//     });
+// }
 
 
 
 initDB();
-ViaChanges();
 
 export default db;

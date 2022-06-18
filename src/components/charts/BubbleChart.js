@@ -28,9 +28,9 @@ function dates(sumstat, f) {
 
 }
 
-function init_vars(data, dims, scale) {
+function init_vars(data, dims, scale, funcs) {
     // set the dimensions and margins of the graph
-    margin = { top: 40, right: 20, bottom: 30, left: 30 };
+    margin = { top: 15, right: 20, bottom: 30, left: 30 };
     width = dims.width * scale / 100;
     height = dims.height * 25 / 100;
 
@@ -61,11 +61,41 @@ function init_vars(data, dims, scale) {
         }))];
     }));
 
-    scores_func = scores(d3.mean);
-    func_name = "Mean";
+    var func = d3.mean;
+    switch (funcs.score) {
+        case "Mean":
+            func = d3.mean; break;
+        case "Max":
+            func = d3.max; break;
+        case "Min":
+            func = d3.min; break;
+        case "Median":
+            func = d3.median; break;
 
-    dates_func = dates(sumstat, d3.mean);
-    d_func_name = "Mean";
+        default:
+            func = d3.mean; break;
+    };
+
+    scores_func = scores(func);
+    func_name = funcs.score;
+
+    var func_t = d3.mean;
+    switch (funcs.time) {
+        case "Mean":
+            func_t = d3.mean; break;
+        case "Max":
+            func_t = d3.max; break;
+        case "Min":
+            func_t = d3.min; break;
+        case "Median":
+            func_t = d3.median; break;
+
+        default:
+            func_t = d3.mean; break;
+    };
+
+    dates_func = dates(sumstat, func_t);
+    d_func_name = funcs.time;
 
     // color palette
     color = d3.scaleOrdinal()
@@ -91,14 +121,13 @@ function init_vars(data, dims, scale) {
         .range([4, 25]);
 }
 
-function draw_graph(data, dims, scale) {
-    init_vars(data, dims, scale);
+function draw_graph(data, dims, scale, funcs) {
+    init_vars(data, dims, scale, funcs);
     constructBubble();
 }
 
 const mouse_over = function (e, d) {
     GetAxisWidth().then((wd) => {
-        console.log("etracted width: " + wd);
         if (wd !== 0 && wd) {
             xAxis_Width = wd;
         }
@@ -116,7 +145,6 @@ const mouse_over = function (e, d) {
             + d_func_name + " Time: " + new Date(dates_func.get(d.key)).toDateString('%D %B %YYYY') +
             '</span>')
         .style('left', xAxis_Width + margin.left + 'px')
-    // .style("top", (height) + "px")
     d3.select(this)
         .style("stroke", "black")
         .style("opacity", 1);
@@ -164,7 +192,7 @@ function constructBubble() {
         .selectAll("text")
         .attr("transform", function (d, e, n) {
             if (n.length > 12)
-                return "translate(10," + 20 + ") rotate(90)";
+                return "translate(-14," + 20 + ") rotate(-80)";
         });
 
 
@@ -175,7 +203,6 @@ function constructBubble() {
             // pouch db
             // SaveAxisWidth(xAxis.getBoundingClientRect().width);
             xAxis_Width = xAxis.getBoundingClientRect().width;
-            console.log("value width set to :" + xAxis_Width);
         }
 
     // attach y
@@ -313,16 +340,16 @@ export function update_y(selectedGroup) {
         .attr("r", function (d) { return z(counts.get(d.key)); });
 };
 
-export function update_data(data, dims, scale) {
+export function update_data(data, dims, scale, funcs) {
     d3.select("div#container").select('svg').remove();
     d3.select("div#container").select("legend").remove();
     //re-drwgrraph
-    draw_graph(data, dims, scale);
+    draw_graph(data, dims, scale, funcs);
     setAxisDimensions();
 }
 
 
-function BubbleChart({ dims, data, scale }) {
+function BubbleChart({ dims, data, scale, funcs }) {
     // for pouchdB
     // if (xAxisWidth == 0) {
     //     GetAxisWidth().then((res) => {
@@ -335,7 +362,6 @@ function BubbleChart({ dims, data, scale }) {
     // }
 
     const ref = useD3((svg) => {
-        console.log(data);
         if (data.length !== 0) {
 
             d3.select('div#container')
@@ -386,7 +412,7 @@ function BubbleChart({ dims, data, scale }) {
             //     update_data(skip, limit)
             // });
 
-            draw_graph(data, dims, scale);
+            draw_graph(data, dims, scale, funcs);
         }
 
     }, [data]);

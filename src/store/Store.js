@@ -1,6 +1,5 @@
-import { act } from '@testing-library/react';
-import React, { createContext, useReducer, useState, useEffect, useRef } from 'react';
-import db, { ForceDataReload, StoreDataToDB } from '../storage/pouchdb';
+import React, { createContext, useReducer, useEffect, useRef } from 'react';
+import db from '../storage/pouchdb';
 import { GetDataToDrawByNCategory, GetNCategoryBySliceSize } from '../utilities/helper';
 import { getGenZ } from '../utilities/restapiconsumer';
 
@@ -9,13 +8,18 @@ const initialState = {
     authenticated: false,
     spinnerStat: false,
     genzCollection: [],
+    youngCollection: [],
     drawData: [],
     xAxisWidth: 0,
     dimensions: {},
     timeoutID: 0,
     skip: 0,
     limit: 7000,
+    limitConnection: false,
+    LIMIT_CONNECTION: 5,
+    alreadyRegistred: false,
     selectTimeFunc: "Mean",
+    selectSSSFunc: "Mean",
     mountedSVG: false,
     openSnack: false,
     loadingData: true,
@@ -25,6 +29,8 @@ const initialState = {
     byCategory: false,
     nCategory: 1,
     scale: 46,
+    stats: "Logits",
+    funcs: "Net_Sent",
 };
 
 export const Context = createContext(initialState);
@@ -64,8 +70,14 @@ export const Store = ({ children }) => {
                     genzCollection: action.payload,
                     drawData: state.skip < state.limit ? action.payload.slice(state.skip, state.limit) : state.drawData
                 }
+            case 'saveYoung':
+                return { ...state, youngCollection: action.payload }
             case 'setSelectTimeFunc':
                 return { ...state, selectTimeFunc: action.payload }
+            case 'setSelectSSSFunc':
+                return { ...state, selectSSSFunc: action.payload }
+            case 'setFuncs':
+                return { ...state, selectSSSFunc: action.payload.score, selectTimeFunc: action.payload.time }
             case 'setMountedSVG':
                 return { ...state, mountedSVG: action.payload }
             case 'setOpenSnack':
@@ -83,6 +95,14 @@ export const Store = ({ children }) => {
                     ...state,
                     byCategory: action.payload
                 }
+            case 'setStats':
+                return { ...state, stats: action.payload }
+            case 'setGFuncs':
+                return { ...state, funcs: action.payload }
+            case 'setLimitConnection':
+                return { ...state, limitConnection: action.payload }
+            case 'setAlreadyRegistred':
+                return { ...state, alreadyRegistred: action.payload }
 
             default:
                 return state
@@ -91,14 +111,10 @@ export const Store = ({ children }) => {
 
     useEffect(() => {
         db.get('_local/genz').then((genz) => {
-            console.log(genz);
             //dispatch({ type: 'fillGenzCollection', payload: genz.data });
             //dispatch({ type: 'setMaxCategory', payload: genz.maxCategory });
             //dispatch({ type: 'setDrawData', payload: genz.data.slice(state.skip, state.limit) })
             dispatch({ type: 'saveStates', payload: genz.data })
-            console.log(state.genzCollection);
-            console.log(genz.data);
-            console.log(state.drawData);
         }, (_) => { console.log("no _id in db named genz") });
     }, [state.spinnerStat]);
 
